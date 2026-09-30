@@ -15,7 +15,6 @@ RATING_VALUES: dict[str, int] = {
 }
 PRICE_PATTERN = re.compile(r"(?<![0-9.])[0-9]+(?:\.[0-9]{1,2})?(?![0-9.])")
 
-
 class BookData(TypedDict):
     url: str
     name: str
@@ -23,16 +22,13 @@ class BookData(TypedDict):
     price: Decimal
     in_stock: bool
 
-
 class BookScraper:
-    """Scrape book data from Books to Scrape using a Playwright page."""
-
+    
     def __init__(self, page: Page, base_url: str = URL) -> None:
         self._page = page
         self._base_url = base_url
 
     def scrape(self, *, category: str | None, max_books: int) -> list[BookData]:
-        """Collect books from the homepage or a matching category."""
         self._page.goto(self._base_url)
         if max_books <= 0:
             return []
@@ -56,7 +52,6 @@ class BookScraper:
             self._page.goto(next_page_url)
 
     def _find_category_url(self, category: str) -> str | None:
-        """Find a category URL by case-insensitive sidebar name."""
         wanted_category = category.strip().casefold()
         if not wanted_category:
             return None
@@ -74,7 +69,7 @@ class BookScraper:
         return None
 
     def _get_next_page_url(self) -> str | None:
-        """Return the absolute URL of the next page, if one exists."""
+
         next_link = self._page.locator("li.next a")
         if next_link.count() == 0:
             return None
@@ -86,7 +81,7 @@ class BookScraper:
 
     @staticmethod
     def _parse_book_card(card: Locator, page_url: str) -> BookData:
-        """Convert one product card into a validated book record."""
+
         title_link = card.locator("h3 a")
         name = title_link.get_attribute("title") or title_link.inner_text().strip()
         href = title_link.get_attribute("href")
@@ -120,7 +115,7 @@ class BookScraper:
 
     @staticmethod
     def _parse_price(price_text: str) -> Decimal:
-        """Extract one decimal price and report malformed values clearly."""
+
         matches = PRICE_PATTERN.findall(price_text)
         if len(matches) != 1:
             raise ValueError(f"Unrecognized book price: {price_text!r}")
@@ -131,10 +126,5 @@ class BookScraper:
 
 
 def scrape_books(page: Page, *, category: str | None, max_books: int) -> list[BookData]:
-    """Scrape books, preserving the public function used by the CLI.
 
-    `category=None` scrapes from the homepage; a category name is matched
-    case-insensitively against the initial homepage sidebar. Results are
-    limited to `max_books` and pagination stops as soon as that limit is met.
-    """
     return BookScraper(page).scrape(category=category, max_books=max_books)
